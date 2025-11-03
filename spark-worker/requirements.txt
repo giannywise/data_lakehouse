@@ -1,0 +1,6 @@
+jupyter
+pyspark==3.5.4
+sqlalchemy
+trino
+pandas
+delta-spark==3.3.0

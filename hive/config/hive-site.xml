@@ -1,0 +1,75 @@
+<configuration>
+  <!-- Metastore-Datenbank (PostgreSQL) Konfiguration -->
+  <property>
+      <name>metastore.thrift.uris</name>
+      <value>thrift://metastore:9083</value>
+      <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:postgresql://postgres:5432/hive_db</value>
+    <description>JDBC-Verbindungs-URL zur PostgreSQL-Datenbank, in der der Hive Metastore gespeichert wird.</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>org.postgresql.Driver</value>
+    <description>JDBC-Treiber für PostgreSQL.</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>hive_db</value>
+    <description>Benutzername für den Zugriff auf die Metastore-Datenbank.</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>password</value>
+    <description>Passwort für den Zugriff auf die Metastore-Datenbank.</description>
+  </property>
+
+  <!-- Warehouse-Verzeichnis (hier MinIO/S3A) -->
+  <property>
+<name>fs.defaultFS</name>
+<value>s3://hive/</value>
+</property>
+
+  <property>
+    <name>metastore.warehouse.dir</name>
+    <value>s3a://hive/</value>
+    <description>Standard-Verzeichnis für Hive-Tabellen</description>
+  </property>
+
+  <!-- S3A / MinIO Konfiguration -->
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>http://minio-host:9000</value>
+    <description>Endpoint für S3A.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>minio</value>
+    <description>Access Key für MinIO.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>minio123</value>
+    <description>Secret Key für MinIO.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>false</value>
+    <description>SSL deaktivieren, falls MinIO über HTTP angesprochen wird.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+    <description>Aktiviert den "path-style" Zugriff, der häufig für S3-kompatible Dienste wie MinIO benötigt wird.</description>
+  </property>
+</configuration>

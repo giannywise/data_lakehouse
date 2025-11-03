@@ -1,0 +1,49 @@
+<configuration>
+  <property>
+      <name>hive.metastore.uris</name>
+        <value>thrift://host.docker.internal:9083</value>
+      <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
+  </property>
+
+  <property>
+    <name>metastore.warehouse.dir</name>
+    <value>s3a://hive/</value>
+    <description>Standard-Verzeichnis für Hive-Tabellen</description>
+  </property>
+
+    <property>
+<name>fs.defaultFS</name>
+<value>s3://hive/</value>
+</property>
+
+  <!-- S3A / MinIO Konfiguration -->
+  <property>
+    <name>fs.s3a.endpoint</name>
+    <value>http://minio-host:9000</value>
+    <description>Endpoint für S3A.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.access.key</name>
+    <value>minio</value>
+    <description>Access Key für MinIO.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.secret.key</name>
+    <value>minio123</value>
+    <description>Secret Key für MinIO.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.connection.ssl.enabled</name>
+    <value>false</value>
+    <description>SSL deaktivieren, falls MinIO über HTTP angesprochen wird.</description>
+  </property>
+
+  <property>
+    <name>fs.s3a.path.style.access</name>
+    <value>true</value>
+    <description>Aktiviert den "path-style" Zugriff, der häufig für S3-kompatible Dienste wie MinIO benötigt wird.</description>
+  </property>
+</configuration>

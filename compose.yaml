@@ -1,0 +1,138 @@
+services:
+
+  spark-master:
+    build: ./spark-master
+    container_name: spark-master
+    networks:
+      - lakehouse
+    ports:
+      - "4040:4040"  # Spark UI
+      - "7077:7077"  # Spark Master
+      - "8888:8888"  # Jupyter Notebook
+      - "8080:8080"  # Spark Master UI
+    volumes:
+      - ./spark-master/notebooks:/opt/spark/work-dir
+      - ./spark-master/test_data:/opt/spark/work-dir/data
+      - ./spark-master/hive-site.xml:/opt/spark/conf/hive-site.xml
+      - ./spark-master/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hive/jars:/opt/spark/hive/jars
+    tty: true
+    stdin_open: true
+    environment:
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+    command: opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+
+  spark-worker:
+    build: ./spark-worker
+    networks:
+      - lakehouse
+    environment:
+      SPARK_WORKER_CORES: 5
+      SPARK_WORKER_MEMORY: 5g
+    volumes:
+      - ./spark-worker/notebooks:/opt/spark/work-dir
+      - ./spark-worker/test_data:/opt/spark/work-dir/data
+      - ./spark-worker/hive-site.xml:/opt/spark/conf/hive-site.xml
+      - ./spark-worker/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hive/jars:/opt/spark/hive/jars
+    tty: true
+    stdin_open: true
+    depends_on:
+      - spark-master
+
+
+
+  trino:
+    image: 'trinodb/trino:latest'
+    hostname: trino
+    container_name: trino
+    depends_on:
+       - metastore
+       - minio-host
+    ports:
+      - '8081:8081'
+    volumes:
+      - ./trino:/etc/trino  # Katalog-Konfiguration
+    networks:
+      - lakehouse
+
+
+  minio-host:
+    image: minio/minio:latest
+    container_name: minio-host
+    ports:
+      - "9000:9000"      # Minio API-Port (S3-kompatibel)
+      - "9001:9001"      # Minio Console (Admin-UI)
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - ./minio-data:/data    # Lokales Volume für die persistente Speicherung von Objektdaten
+    command: server /data --console-address ":9001" # Startparameter für Minio
+    networks:
+      - lakehouse
+
+  metastore:
+    image: 'apache/hive:4.0.1'
+    hostname: metastore
+    container_name: metastore
+    depends_on:
+      - postgres
+    ports:
+        - '9083:9083' # thrift port
+    environment:
+      - SERVICE_NAME=metastore
+      - DB_DRIVER=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5434
+      - DB_NAME=hive_db
+    volumes:
+      - ./hive/data:/opt/hive/data/warehouse
+      - type: bind
+        source: ./hive/config/hive-site.xml
+        target: /opt/hive/conf/hive-site.xml
+      - type: bind
+        source: ./hive/TempPackages/hadoop-aws-3.3.4.jar # hadoop-aws-3.3.4.jar / hadoop-aws-3.1.0.jar
+        target: /opt/hive/lib/hadoop-aws-3.3.4.jar # hadoop-aws-3.3.4.jar / hadoop-aws-3.1.0.jar
+      - type: bind
+        source: ./hive/TempPackages/aws-java-sdk-bundle-1.12.262.jar # 1.11.271 / 1.12.262
+        target: /opt/hive/lib/aws-java-sdk-bundle-1.12.262.jar #  1.11.271 1.12.262 / 1.12.262
+      - type: bind
+        source: ./hive/TempPackages/postgresql-42.7.5.jar
+        target: /opt/hive/lib/postgresql-42.7.5.jar
+    command:
+      - /opt/hive/bin/hive --service metastore
+    networks:
+      - lakehouse
+
+  postgres:
+    image: 'postgres:latest'
+    hostname: postgres
+    container_name: postgres
+    environment:
+    - POSTGRES_USER=hive_db
+    - POSTGRES_PASSWORD=password
+    - POSTGRES_DB=hive_db
+    - LANG=en_US.UTF-8
+    - LC_ALL=en_US.UTF-8
+    - PGCLIENTENCODING=UTF8
+    volumes:
+      - ./hive/metastore_db:/var/lib/postgresql/data
+    ports:
+      - '5434:5434'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U hive_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 2
+    networks:
+      - lakehouse
+
+
+
+networks:
+  lakehouse:
+    driver: bridge
+    external: true
+    name: lakehouse
